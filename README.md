@@ -25,7 +25,7 @@ This repository provides a GitOps-based approach to deploying and managing Red H
 
 This repository addresses OpenShift AI dependencies that are treated as **administrator-owned resources**. It provides a template for deploying these prerequisites in a standardized way, simplifying the administrator's workflow by providing a single source of truth for the entire OpenShift AI stack.
 
-This repository works with both GitOps tools (ArgoCD, Flux, etc.) and `oc` or `kubectl` CLI.
+This repository works with GitOps tools (ArgoCD, Flux, etc.).
 
 ### How the Structure Works
 
