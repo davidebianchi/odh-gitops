@@ -19,6 +19,7 @@ kueue:
 aipipelines: []
 ray:
   - certManager
+dashboard: []
 {{- end }}
 
 {{/*
