@@ -86,7 +86,7 @@ High-level features that:
 
 | managementState | Dependencies auto-enabled | Available for |
 |-----------------|---------------------------|---------------|
-| `Managed` | Yes | kserve, aipipelines |
+| `Managed` | Yes | kserve, aipipelines, ray |
 | `Unmanaged` | Yes | kueue |
 | `Removed` | No | all |
 
@@ -95,6 +95,7 @@ High-level features that:
 | `kserve` | KServe model serving | certManager, leaderWorkerSet, jobSet, rhcl |
 | `kueue` | Kueue job queuing | kueue |
 | `aipipelines` | AI Pipelines | - |
+| `ray` | Ray distributed computing | certManager |
 
 ### Dependencies
 

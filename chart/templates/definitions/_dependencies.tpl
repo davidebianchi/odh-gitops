@@ -17,6 +17,8 @@ kueue:
   - certManager
   - kueue
 aipipelines: []
+ray:
+  - certManager
 {{- end }}
 
 {{/*
