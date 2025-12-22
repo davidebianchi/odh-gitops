@@ -1,0 +1,207 @@
+global:
+  # -- Installation type for dependencies (currently only olm is supported)
+  installationType: olm
+
+  # -- Skip CRD existence check - render all CRs regardless. Set to true for ArgoCD or when running helm multiple times
+  skipCrdCheck: false
+
+  # OLM settings
+  olm:
+    # -- Install plan approval mode (Automatic or Manual)
+    installPlanApproval: Automatic
+    # -- Default catalog source for OLM subscriptions
+    source: redhat-operators
+    # -- Namespace of the catalog source
+    sourceNamespace: openshift-marketplace
+
+  # -- Common labels applied to all resources
+  labels: {}
+
+# =============================================================================
+# OPERATOR - ODH or RHOAI operator installation
+# =============================================================================
+operator:
+  # -- Enable operator installation
+  enabled: true
+
+  # -- Operator type: odh (Open Data Hub) or rhoai (Red Hat OpenShift AI)
+  type: odh
+
+  # -- ODH operator settings
+  odh:
+    monitoringNamespace: opendatahub
+    applicationsNamespace: opendatahub
+
+    olm:
+      channel: fast-3
+      name: opendatahub-operator
+      namespace: opendatahub-operator-system
+      source: community-operators
+
+  # -- RHOAI operator settings
+  rhoai:
+    monitoringNamespace: redhat-ods-monitoring
+    applicationsNamespace: redhat-ods-applications
+
+    olm:
+      channel: fast-3.x
+      name: rhods-operator
+      namespace: redhat-ods-operator
+      source: redhat-operators
+
+# =============================================================================
+# COMPONENTS - High-level features that auto-enable their dependencies
+# Components configure the DataScienceCluster (DSC) managementState.
+# managementState values: Managed (dependencies auto-enabled), Removed (no deps), Unmanaged (kueue only, deps auto-enabled)
+components:
+  # -- KServe model serving component
+  kserve:
+    # -- Management state for KServe (Managed or Removed). Auto-enables: certManager, leaderWorkerSet, jobSet, rhcl
+    managementState: Managed
+
+  # -- Kueue job queuing component
+  kueue:
+    # -- Management state for Kueue (Unmanaged or Removed). Auto-enables: kueue operator
+    managementState: Unmanaged
+
+  # -- AI Pipelines component
+  aipipelines:
+    # -- Management state for AI Pipelines (Managed or Removed)
+    managementState: Managed
+
+# =============================================================================
+# DEPENDENCIES - Operators required by components
+#
+# Tri-state enabled:
+#   auto  - Install if required by an enabled component (default)
+#   true  - Always install
+#   false - Never install (user has it already or doesn't want it)
+#
+# config.spec: CR spec fields (user can add any fields supported by the CR)
+# =============================================================================
+dependencies:
+  # -- Cert Manager operator
+  certManager:
+    # -- Enable cert-manager: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable-v1
+      name: openshift-cert-manager-operator
+      namespace: cert-manager-operator
+
+  # -- Leader Worker Set operator
+  leaderWorkerSet:
+    # -- Enable leader-worker-set: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable-v1.0
+      name: leader-worker-set
+      namespace: openshift-lws-operator
+      targetNamespaces:
+        - openshift-lws-operator
+    config:
+      # -- LeaderWorkerSetOperator CR spec
+      spec:
+        managementState: Managed
+        logLevel: Normal
+        operatorLogLevel: Normal
+
+  # -- Job Set operator
+  jobSet:
+    # -- Enable job-set: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: tech-preview-v0.1
+      name: job-set
+      namespace: openshift-jobset-operator
+      targetNamespaces:
+        - openshift-jobset-operator
+    config:
+      # -- JobSetOperator CR spec (user can add any fields supported by the CR)
+      spec:
+        logLevel: Normal
+        operatorLogLevel: Normal
+
+  # -- RHCL (Kuadrant) operator
+  rhcl:
+    # -- Enable rhcl: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable
+      name: rhcl-operator
+      namespace: kuadrant-system
+    config:
+      # -- Enable Authorino TLS configuration
+      tlsEnabled: false
+      # -- Kuadrant CR spec (user can add any fields)
+      spec: {}
+      # -- Authorino CR spec (only created if tlsEnabled: true)
+      authorinoSpec:
+        replicas: 1
+        clusterWide: true
+        listener:
+          tls:
+            enabled: true
+            certSecretRef:
+              name: authorino-server-cert
+        oidcServer:
+          tls:
+            enabled: false
+
+  # -- Kueue operator
+  kueue:
+    # -- Enable kueue: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable-v1.1
+      name: kueue-operator
+      namespace: openshift-kueue-operator
+    config:
+      # -- Kueue CR spec (user can add any fields)
+      spec:
+        managementState: Managed
+        config:
+          integrations:
+            frameworks:
+              - Deployment
+              - Pod
+              - PyTorchJob
+              - RayCluster
+              - RayJob
+              - StatefulSet
+
+  # -- Cluster Observability operator
+  clusterObservability:
+    # -- Enable cluster-observability: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable
+      name: cluster-observability-operator
+      namespace: openshift-cluster-observability-operator
+
+  # -- OpenTelemetry operator
+  opentelemetry:
+    # -- Enable opentelemetry: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable
+      name: opentelemetry-product
+      namespace: openshift-opentelemetry-operator
+
+  # -- Tempo operator
+  tempo:
+    # -- Enable tempo: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable
+      name: tempo-product
+      namespace: openshift-tempo-operator
+
+  # -- Custom Metrics Autoscaler (KEDA) operator
+  customMetricsAutoscaler:
+    # -- Enable custom-metrics-autoscaler: auto (if needed), true (always), false (never)
+    enabled: auto
+    olm:
+      channel: stable
+      name: openshift-custom-metrics-autoscaler-operator
+      namespace: openshift-keda
