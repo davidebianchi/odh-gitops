@@ -104,7 +104,7 @@ spec:
   applicationsNamespace: opendatahub
   trustedCABundle:
     managementState: Managed
-    customCABundle:
+    customCABundle: ""
 ---
 # Source: odh-rhoai-chart/templates/operator/datasciencecluster.yaml
 apiVersion: datasciencecluster.opendatahub.io/v2
