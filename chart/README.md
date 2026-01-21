@@ -414,3 +414,14 @@ If a dependency is not being installed:
 1. Check if the component that requires it is enabled
 2. Check if the dependency is explicitly set to `false`
 3. Verify the dependency is in the component's dependency map
+
+### Upgrade fails because object fields are modified
+
+If you see the following error:
+
+```txt
+Error: UPGRADE FAILED: conflict occurred while applying object ...
+```
+
+It is an Helm Server-Side Apply (SSA) field ownership issue. The error indicates that Helm is trying to update a field that is not owned by the Helm chart.
+To fix it, you can force conflicts resolution by adding the `--force-conflicts` flag to the helm upgrade command.
