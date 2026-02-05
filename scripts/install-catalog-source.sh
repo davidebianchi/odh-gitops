@@ -80,6 +80,7 @@ echo "  Image: ${CATALOG_IMAGE}"
 echo ""
 
 # Create the CatalogSource
+oc delete --ignore-not-found catalogsource ${CATALOG_SOURCE_NAME} -n ${CATALOG_SOURCE_NAMESPACE}
 cat <<EOF | oc apply -f -
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
