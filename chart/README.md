@@ -62,7 +62,7 @@ The script can be customized with environment variables:
 
 ### Enable Models as Service
 
-To enable Models as Service, Gateway and GatewayClass are needed. Them could be created manually or with the chart.
+To enable Models as Service, Gateway and GatewayClass are needed. They could be created manually or with the chart.
 To create them with the chart, you need to manually set the gateway hostname, and the certificate secret name.
 By default, the Gateway creation is disabled. To enable it, you need to set the `components.kserve.modelsAsService.gateway.create`
 and `components.kserve.modelsAsService.gatewayClass.create` to `true`.

@@ -56,6 +56,11 @@ EOF
 while [[ $# -gt 0 ]]; do
     case $1 in
         -i|--image)
+            if [[ -z "${2:-}" ]]; then
+                echo "ERROR: --image requires a value"
+                show_help
+                exit 1
+            fi
             CATALOG_IMAGE="$2"
             shift 2
             ;;
