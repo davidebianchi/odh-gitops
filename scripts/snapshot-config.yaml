@@ -32,3 +32,8 @@ charts:
           - components.llamastackoperator.dsc.managementState=Managed
           - components.trainingoperator.dsc.managementState=Managed
           - components.kserve.dsc.modelsAsService.managementState=Managed
+
+      - name: install-with-helm-dependencies
+        setFlags:
+          - skipCrdCheck=true
+          - tags.install-with-helm-dependencies=true
