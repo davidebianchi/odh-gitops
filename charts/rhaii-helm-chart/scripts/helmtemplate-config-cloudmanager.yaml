@@ -43,6 +43,16 @@ rules:
       - path: .spec.template.spec.containers[name=manager].env[name=RHAI_OPERATOR_NAMESPACE].value
         value: '{{ .Values.rhaiOperator.namespace }}'
 
+  - match:
+      kinds:
+        - ServiceAccount
+    changes:
+      - path: .
+        appendWith: |
+          {{- with (include "rhaii-helm-chart.imagePullSecrets" .) }}
+          {{- . }}
+          {{- end }}
+
   # Wrap all resources with cloud enabled conditional
   - wrap:
       before: '{{- if .Values.CLOUD_NAME.enabled }}'

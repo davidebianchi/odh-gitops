@@ -157,10 +157,4 @@ spec:
           secret:
             defaultMode: 420
             secretName: redhat-ods-operator-controller-webhook-cert
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-      {{- range . }}
-        - name: {{ . }}
-      {{- end }}
-      {{- end }}
 {{- end }}

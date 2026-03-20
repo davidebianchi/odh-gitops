@@ -74,19 +74,10 @@ rules:
       before: '{{- if .Values.enabled }}'
       after: '{{- end }}'
 
-  # Replace imagePullSecrets in Deployments with Helm template
   - match:
       kinds:
         - Deployment
     changes:
-      - path: .spec.template.spec.imagePullSecrets
-        replaceWith: |
-          {{- with .Values.imagePullSecrets }}
-          imagePullSecrets:
-          {{- range . }}
-            - name: {{ . }}
-          {{- end }}
-          {{- end }}
       - path: .spec.template.spec.containers[name=rhods-operator].env[name=RHAI_APPLICATIONS_NAMESPACE].value
         value: '{{ .Values.rhaiOperator.applicationsNamespace }}'
       - path: .spec.template.spec.containers[name=rhods-operator].env
@@ -95,14 +86,19 @@ rules:
           - name: {{ $name }}
             value: {{ $value }}
           {{- end }}
-
-  # Replace manager container image with Helm template value
-  - match:
-      kinds:
-        - Deployment
-    changes:
+      # Replace manager container image with Helm template value
       - path: .spec.template.spec.containers[0].image
         value: '{{ .Values.rhaiOperator.image }}'
+
+  - match:
+      kinds:
+        - ServiceAccount
+    changes:
+      - path: .
+        appendWith: |
+          {{- with (include "rhaii-helm-chart.imagePullSecrets" .) }}
+          {{- . }}
+          {{- end }}
 
   - match:
       kinds:

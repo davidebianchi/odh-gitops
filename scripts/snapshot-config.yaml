@@ -58,7 +58,7 @@ charts:
           - azure.enabled=true
           - rhaiOperator.relatedImages.RELATED_IMAGE_ODH_KSERVE_CONTROLLER_IMAGE=quay.io/opendatahub/kserve-controller:latest
 
-      - name: with-custom-namespacew
+      - name: with-custom-namespace
         setFlags:
           - azure.enabled=true
           - rhaiOperator.namespace=rhai-operator
@@ -67,3 +67,8 @@ charts:
       - name: coreweave
         setFlags:
           - coreweave.enabled=true
+
+      - name: azure-with-pull-secret
+        setFlags:
+          - azure.enabled=true
+          - imagePullSecret.dockerConfigJson=testauth
