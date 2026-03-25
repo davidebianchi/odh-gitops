@@ -1,0 +1,89 @@
+name: Helm Sync CI
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - 'rhoai-[23].[0-9]'  # e.g. rhoai-2.1, rhoai-3.1, rhoai-3.4
+      - 'rhoai-[23].[0-9][0-9]'  # e.g. rhoai-2.10, rhoai-3.10, rhoai-3.22
+      - 'rhoai-[3].[0-9]-ea.[0-9]'  # e.g. rhoai-3.4-ea.1, rhoai-3.5-ea.2
+      - 'rhoai-[3].[0-9][0-9]-ea.[0-9]'  # e.g. rhoai-3.10-ea.3
+    paths:
+      - 'charts/rhaii-helm-chart/**'
+
+permissions:
+  contents: read
+
+# Ensure only one sync runs per branch at a time. When multiple pushes
+# happen in quick succession to the same branch, concurrent runs could
+# race to commit to the target repo, causing push conflicts or lost writes.
+# cancel-in-progress is false so that an in-flight sync is never aborted
+# mid-commit — subsequent runs queue and wait their turn instead.
+concurrency:
+  group: helm-sync-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  GITHUB_ORG: red-hat-data-services
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate github-app token
+        id: app-token
+        uses: getsentry/action-github-app-token@v2
+        with:
+          app_id: ${{ secrets.RHOAI_DEVOPS_APP_ID }}
+          private_key: ${{ secrets.RHOAI_DEVOPS_APP_PRIVATE_KEY }}
+
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITHUB_ORG }}/odh-gitops
+          path: source_repo
+          ref: ${{ github.ref_name }}  # Use the same branch name as in the event
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITHUB_ORG }}/RHOAI-Build-Config
+          path: target_repo
+          ref: ${{ github.ref_name }}  # Use the same branch name as in the event
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Sync Helm Files
+        run: |
+          if [ ! -d source_repo/charts/rhaii-helm-chart ]; then
+            echo "::error::rhaii-helm-chart directory not found in the source repo"
+            exit 1
+          fi
+          mkdir -p target_repo/to-be-processed/helm/rhaii-helm-chart
+          echo "Updating helm related files"
+          rm -rf target_repo/to-be-processed/helm/rhaii-helm-chart/*
+          cp -r source_repo/charts/rhaii-helm-chart/* target_repo/to-be-processed/helm/rhaii-helm-chart
+
+      - name: Check for helm files changes
+        id: helm-change-check
+        run: |
+          cd target_repo
+          git add to-be-processed/helm/
+          if [ -z "$(git diff --staged | grep -P '^[-+]' | grep -v createdAt | grep -v -P '^(\+\+\+|---)')" ]; then
+            echo "helm_changes=empty" >> $GITHUB_OUTPUT
+          else
+            echo "helm_changes=present" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push the changes to release branch
+        uses: actions-js/push@v1.5
+        if: ${{ steps.helm-change-check.outputs.helm_changes == 'present' }}
+        with:
+          github_token: ${{ steps.app-token.outputs.token }}
+          branch: ${{ github.ref_name }}
+          message: "Sync helm chart from odh-gitops@${{ github.sha }}"
+          repository: ${{ env.GITHUB_ORG }}/RHOAI-Build-Config
+          directory: target_repo
+          author_name: Openshift-AI DevOps
+          author_email: openshift-ai-devops@redhat.com
