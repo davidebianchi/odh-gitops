@@ -51,7 +51,7 @@ operator:
     applicationsNamespace: redhat-ods-applications
 
     olm:
-      channel: fast-3.x
+      channel: beta
       name: rhods-operator
       namespace: redhat-ods-operator
       source: redhat-operators
