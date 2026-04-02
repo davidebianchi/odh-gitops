@@ -10,7 +10,8 @@ on:
       - 'rhoai-[3].[0-9]-ea.[0-9]'  # e.g. rhoai-3.4-ea.1, rhoai-3.5-ea.2
       - 'rhoai-[3].[0-9][0-9]-ea.[0-9]'  # e.g. rhoai-3.10-ea.3
     paths:
-      - 'charts/rhaii-helm-chart/**'
+      - 'charts/rhai-on-openshift-chart/**'
+      - 'charts/rhai-on-xks-chart/**'
 
 permissions:
   contents: read
@@ -56,14 +57,16 @@ jobs:
 
       - name: Sync Helm Files
         run: |
-          if [ ! -d source_repo/charts/rhaii-helm-chart ]; then
-            echo "::error::rhaii-helm-chart directory not found in the source repo"
-            exit 1
-          fi
-          mkdir -p target_repo/to-be-processed/helm/rhaii-helm-chart
-          echo "Updating helm related files"
-          rm -rf target_repo/to-be-processed/helm/rhaii-helm-chart/*
-          cp -r source_repo/charts/rhaii-helm-chart/* target_repo/to-be-processed/helm/rhaii-helm-chart
+          for chart in rhai-on-openshift-chart rhai-on-xks-chart; do
+            if [ ! -d "source_repo/charts/${chart}" ]; then
+              echo "::error::${chart} directory not found in the source repo"
+              exit 1
+            fi
+            mkdir -p "target_repo/to-be-processed/helm/${chart}"
+            echo "Updating helm files for ${chart}"
+            rm -rf "target_repo/to-be-processed/helm/${chart:?}"/*
+            cp -r "source_repo/charts/${chart}"/* "target_repo/to-be-processed/helm/${chart}"
+          done
 
       - name: Check for helm files changes
         id: helm-change-check
