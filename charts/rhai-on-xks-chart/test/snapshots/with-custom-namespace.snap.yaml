@@ -2563,14 +2563,14 @@ spec:
         - name: cert
           secret:
             defaultMode: 420
-            secretName: redhat-ods-operator-controller-webhook-cert
+            secretName: rhai-operator-controller-webhook-cert
 ---
 # Source: rhai-on-xks-chart/templates/webhooks/mutatingwebhookconfiguration-rhods-operator-mutating-webhook-configuration.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: rhai-operator/rhai-operator-webhook-cert
+    cert-manager.io/inject-ca-from: rhai-operator/opendatahub-operator-webhook-cert
   name: rhai-operator-mutating-webhook-configuration
   namespace: rhai-operator
   labels:
