@@ -62,10 +62,13 @@ jobs:
               echo "::error::${chart} directory not found in the source repo"
               exit 1
             fi
-            mkdir -p "target_repo/to-be-processed/helm/${chart}"
             echo "Updating helm files for ${chart}"
-            rm -rf "target_repo/to-be-processed/helm/${chart:?}"/*
-            cp -r "source_repo/charts/${chart}"/* "target_repo/to-be-processed/helm/${chart}"
+            mkdir -p "target_repo/to-be-processed/helm/${chart}"
+            rsync -a --delete \
+              --exclude '/test/' \
+              --exclude '/scripts/' \
+              "source_repo/charts/${chart}/" \
+              "target_repo/to-be-processed/helm/${chart}/"
           done
 
       - name: Check for helm files changes
