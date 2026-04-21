@@ -63,8 +63,10 @@ jobs:
               exit 1
             fi
             echo "Updating helm files for ${chart}"
+            # Recreate the chart dir so nothing removed in source can linger
+            rm -rf "target_repo/to-be-processed/helm/${chart}"
             mkdir -p "target_repo/to-be-processed/helm/${chart}"
-            rsync -a --delete \
+            rsync -a \
               --exclude '/test/' \
               --exclude '/scripts/' \
               "source_repo/charts/${chart}/" \
@@ -75,8 +77,9 @@ jobs:
         id: helm-change-check
         run: |
           cd target_repo
-          git add to-be-processed/helm/
-          if [ -z "$(git diff --staged | grep -P '^[-+]' | grep -v createdAt | grep -v -P '^(\+\+\+|---)')" ]; then
+          # Stage adds, edits, and deletions (including empty-file removals).
+          git add -A to-be-processed/helm/
+          if git diff --staged --quiet; then
             echo "helm_changes=empty" >> $GITHUB_OUTPUT
           else
             echo "helm_changes=present" >> $GITHUB_OUTPUT
