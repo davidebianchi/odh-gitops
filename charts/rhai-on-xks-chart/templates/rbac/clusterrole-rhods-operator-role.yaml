@@ -766,6 +766,21 @@ rules:
       - patch
       - update
   - apiGroups:
+      - maas.opendatahub.io
+    resources:
+      - tenants
+    verbs:
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - maas.opendatahub.io
+    resources:
+      - tenants/status
+    verbs:
+      - get
+  - apiGroups:
       - machinelearning.seldon.io
     resources:
       - seldondeployments
