@@ -69,11 +69,9 @@ jobs:
             rsync -a \
               --exclude '/test/' \
               --exclude '/scripts/' \
-              --exclude 'values.schema.json' \
               --exclude 'api-docs.md' \
               --exclude 'README.md' \
               --exclude '.helmignore' \
-              --exclude 'templates/NOTES.txt' \
               "source_repo/charts/${chart}/" \
               "target_repo/to-be-processed/helm/${chart}/"
           done
