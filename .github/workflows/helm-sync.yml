@@ -70,8 +70,6 @@ jobs:
               --exclude '/test/' \
               --exclude '/scripts/' \
               --exclude 'api-docs.md' \
-              --exclude 'README.md' \
-              --exclude '.helmignore' \
               "source_repo/charts/${chart}/" \
               "target_repo/to-be-processed/helm/${chart}/"
           done
