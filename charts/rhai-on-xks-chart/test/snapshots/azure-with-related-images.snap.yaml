@@ -2292,11 +2292,11 @@ spec:
             periodSeconds: 10
           resources:
             limits:
-              cpu: 500m
-              memory: 2Gi
+              cpu: 1000m
+              memory: 4Gi
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 780Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -2320,7 +2320,7 @@ metadata:
   name: rhai-operator
   namespace: redhat-ods-operator
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       name: rhai-operator
@@ -2454,9 +2454,9 @@ spec:
           resources:
             limits:
               cpu: 500m
-              memory: 1Gi
+              memory: 4Gi
             requests:
-              cpu: 300m
+              cpu: 500m
               memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
