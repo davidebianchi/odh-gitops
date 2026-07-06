@@ -5,6 +5,11 @@
 {{- $keResource := include "rhai-on-xks-chart.keResourceName" . }}
 {{- if or $componentCRs $providerKECR }}
 {{- $provider := include "rhai-on-xks-chart.activeProvider" . | fromYaml }}
+{{- if include "rhai-on-xks-chart.imagePullSecretEnabled" . }}
+{{- $hookAnnotations := dict "helm.sh/hook" "pre-delete" "helm.sh/hook-delete-policy" "before-hook-creation,hook-succeeded" }}
+{{ include "rhai-on-xks-chart.imagePullSecretResource" (dict "root" . "namespace" .Release.Namespace "annotations" $hookAnnotations) }}
+---
+{{- end }}
 {{- $depNamespaces := (include "rhai-on-xks-chart.kubernetesEngineDependencyNamespaces" (dict "root" . "managedOnly" true) | fromJson).items }}
 apiVersion: v1
 kind: ServiceAccount

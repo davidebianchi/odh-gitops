@@ -636,7 +636,7 @@ for i in "${!TEST_NAMES[@]}"; do
     color="$RED"
     all_passed=false
   fi
-  printf "  %-55s %s%s%s\n" "${TEST_NAMES[$i]}" "$color" "$result" "$NC"
+  printf "  %-55s %b%s%b\n" "${TEST_NAMES[$i]}" "$color" "$result" "$NC"
 done
 
 echo ""
