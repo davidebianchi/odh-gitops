@@ -201,7 +201,7 @@ spec:
   listeners:
   - allowedRoutes:
       namespaces:
-        from: All
+        from: Same
     name: https
     port: 443
     protocol: HTTPS
@@ -224,7 +224,7 @@ spec:
   listeners:
   - allowedRoutes:
       namespaces:
-        from: All
+        from: Same
     name: https
     port: 443
     protocol: HTTPS
