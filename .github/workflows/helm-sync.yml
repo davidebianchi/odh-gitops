@@ -12,6 +12,7 @@ on:
     paths:
       - 'charts/rhai-on-openshift-chart/**'
       - 'charts/rhai-on-xks-chart/**'
+      - 'charts/dependencies/**'
 
 permissions:
   contents: read
@@ -57,7 +58,7 @@ jobs:
 
       - name: Sync Helm Files
         run: |
-          for chart in rhai-on-openshift-chart rhai-on-xks-chart; do
+          for chart in rhai-on-openshift-chart rhai-on-xks-chart dependencies; do
             if [ ! -d "source_repo/charts/${chart}" ]; then
               echo "::error::${chart} directory not found in the source repo"
               exit 1
@@ -67,8 +68,8 @@ jobs:
             rm -rf "target_repo/to-be-processed/helm/${chart}"
             mkdir -p "target_repo/to-be-processed/helm/${chart}"
             rsync -a \
-              --exclude '/test/' \
-              --exclude '/scripts/' \
+              --exclude 'test/' \
+              --exclude 'scripts/' \
               --exclude 'api-docs.md' \
               "source_repo/charts/${chart}/" \
               "target_repo/to-be-processed/helm/${chart}/"
