@@ -133,8 +133,12 @@ wait_for_deployment() {
 
   if ! kubectl rollout status deployment "${name}" -n "${ns}" --timeout="${TIMEOUT}s"; then
     fail "Deployment '${name}' in '${ns}' did not become ready within ${TIMEOUT}s"
+    echo "  DEBUG: deployment '${name}' details:"
+    kubectl describe deployment "${name}" -n "${ns}" 2>/dev/null || true
     kubectl get deployment "${name}" -n "${ns}" -o wide 2>/dev/null || true
     kubectl get pods -n "${ns}" 2>/dev/null || true
+    echo "  DEBUG: recent warning events in '${ns}':"
+    kubectl get events -n "${ns}" --field-selector=type=Warning --sort-by=.metadata.creationTimestamp 2>/dev/null | tail -n 50 || true
     return 1
   fi
 
