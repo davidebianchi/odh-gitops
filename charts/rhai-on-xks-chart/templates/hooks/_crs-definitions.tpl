@@ -93,7 +93,7 @@ echo "Waiting for CRD platforms.config.opendatahub.io to be established..."
 kubectl wait --for condition=established --timeout=300s crd/platforms.config.opendatahub.io
 echo "Creating Platform CR..."
 kubectl apply -f - <<'EOF'
-apiVersion: config.opendatahub.io/v1alpha1
+apiVersion: config.opendatahub.io/v1alpha2
 kind: Platform
 metadata:
   name: default
