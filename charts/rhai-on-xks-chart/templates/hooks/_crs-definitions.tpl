@@ -71,10 +71,9 @@ Returns a JSON list of enabled module names for guard conditions.
 
 {{/*
 Emit a single kubectl apply for the Platform CR.
-The CR is always created (even with an empty modules spec) so it is present
-in the cluster for the operator to reconcile. Enabled modules get
-spec.modules.<key>.managementState: Managed; if none are enabled the CR is
-created with an empty spec.
+The CR is always created so it is present in the cluster for the operator to
+reconcile. Registered modules get managementState: Managed when enabled and
+Removed when disabled, so Helm upgrades also clean up disabled modules.
 Include with: {{- include "rhai-on-xks-chart.moduleApplyCommands" . | nindent 14 }}
 */}}
 {{- define "rhai-on-xks-chart.moduleApplyCommands" -}}
@@ -84,15 +83,24 @@ Include with: {{- include "rhai-on-xks-chart.moduleApplyCommands" . | nindent 14
 {{- range $name := keys $registry | sortAlpha }}
   {{- $meta := index $registry $name }}
   {{- $modVals := index $.Values.components $name | default dict }}
-  {{- if $modVals.enabled }}
-    {{- $key := index $meta "platformModuleKey" }}
-    {{- $modulesSpec = merge $modulesSpec (dict $key (dict "managementState" "Managed")) }}
-  {{- end }}
+  {{- $key := index $meta "platformModuleKey" }}
+  {{- $state := ternary "Managed" "Removed" ($modVals.enabled | default false) }}
+  {{- $modulesSpec = merge $modulesSpec (dict $key (dict "managementState" $state)) }}
 {{- end }}
 echo "Waiting for CRD platforms.config.opendatahub.io to be established..."
 kubectl wait --for condition=established --timeout=300s crd/platforms.config.opendatahub.io
 echo "Creating Platform CR..."
-kubectl apply -f - <<'EOF'
+apply_deadline=$((SECONDS + 300))
+last_error=""
+while true; do
+  remaining=$((apply_deadline - SECONDS))
+  if (( remaining <= 0 )); then
+    echo "Timed out applying Platform CR. Last error: $last_error" >&2
+    exit 1
+  fi
+  attempt_timeout=$((remaining < 15 ? remaining : 15))
+  # kubectl --request-timeout bypasses in-cluster configuration; bound the process instead.
+  if apply_output=$(timeout --kill-after=5s "${attempt_timeout}s" kubectl apply -f - 2>&1 <<'EOF'
 apiVersion: config.opendatahub.io/v1alpha2
 kind: Platform
 metadata:
@@ -107,6 +115,25 @@ spec:
 spec: {}
 {{- end }}
 EOF
+  ); then
+    echo "$apply_output"
+    break
+  else
+    apply_output="${apply_output:-kubectl apply failed with exit code $?}"
+  fi
+  case "$apply_output" in
+    *'Error from server (Forbidden)'*|*'Error from server (Invalid)'*|*' is forbidden:'*|*' is invalid:'*|*'The request is invalid'*|\
+    *'ValidationError('*)
+      echo "Platform apply failed permanently: $apply_output" >&2
+      exit 1
+      ;;
+  esac
+  if [[ -z "$last_error" ]]; then
+    echo "Platform apply failed; retrying every 5 seconds: $apply_output" >&2
+  fi
+  last_error="$apply_output"
+  sleep 5
+done
 {{- end -}}
 
 {{/*

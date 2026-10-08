@@ -61,7 +61,7 @@ spec:
               value: "true"
             - name: RHAI_DISABLE_DASHBOARD_MODULE
               value: "true"
-            - name: RHAI_DISABLE_FEASTOPERATOR_MODULE
+            - name: RHAI_DISABLE_DATA_MODULE
               value: "true"
             - name: RHAI_DISABLE_MCPLIFECYCLEOPERATOR_MODULE
               value: "true"
@@ -88,7 +88,7 @@ spec:
             - name: RHAI_DISABLE_CERTCONFIGMAPGENERATOR_SERVICE
               value: "true"
             - name: RHAI_DISABLE_GATEWAY_SERVICE
-              value: "false"
+              value: "true"
             - name: RHAI_DISABLE_SETUPCONTROLLER_SERVICE
               value: "true"
             - name: RHAI_APPLICATIONS_NAMESPACE

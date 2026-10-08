@@ -75,6 +75,18 @@ rules:
       - path: .webhooks[*].clientConfig.service.namespace
         value: '{{ .Values.rhaiOperator.namespace }}'
 
+  # Replace namespace in Platform conversion webhook references
+  - match:
+      kinds:
+        - CustomResourceDefinition
+      names:
+        - platforms.config.opendatahub.io
+    changes:
+      - path: .metadata.annotations["cert-manager.io/inject-ca-from"]
+        value: '{{ .Values.rhaiOperator.namespace }}/rhai-operator-webhook-cert'
+      - path: .spec.conversion.webhook.clientConfig.service.namespace
+        value: '{{ .Values.rhaiOperator.namespace }}'
+
   # Wrap CRDs with installCRDs condition
   - match:
       kinds:
@@ -98,6 +110,8 @@ rules:
         value: '{{ .Values.rhaiOperator.applicationsNamespace | quote }}'
       - path: .spec.template.spec.containers[name=rhods-operator].env[name=RHAI_VERSION].value
         value: '{{ .Chart.AppVersion | quote }}'
+      - path: .spec.template.spec.containers[name=rhods-operator].env[name=RHAI_DISABLE_GATEWAY_SERVICE].value
+        value: 'true'
       # Remove hardcoded kuberay operator image
       - action: delete
         path: .spec.template.spec.containers[name=rhods-operator].env[name=RELATED_IMAGE_*]

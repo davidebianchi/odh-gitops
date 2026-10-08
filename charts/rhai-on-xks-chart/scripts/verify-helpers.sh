@@ -402,7 +402,7 @@ ensure_deployed() {
     wait_ke_ready
     return $?
   fi
-  helm_deploy ${extra_args[@]+"${extra_args[@]}"}
+  helm_deploy ${extra_args[@]+"${extra_args[@]}"} || return 1
   wait_ke_ready
 }
 

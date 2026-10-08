@@ -72,8 +72,13 @@ test_1_install_check() {
 # ─── Test 2: sail + lws Managed→Unmanaged→Managed ──────────────────────────
 
 test_2_sail_lws_managed_unmanaged() {
+  local saved_helm_extra_args="$HELM_EXTRA_ARGS"
+  # Helm's Platform hook removes KServe; keep it disabled through every cycle upgrade.
+  local HELM_EXTRA_ARGS="$HELM_EXTRA_ARGS --set components.kserve.enabled=false"
+
+  log "Removing KServe and the inference gateway before the dependency cycle"
   ensure_deployed \
-    --set "${PROV_PREFIX}.lws.managementPolicy=Managed"
+    --set "${PROV_PREFIX}.lws.managementPolicy=Managed" || return 1
 
   log "Step 1: sailOperator + lws → Unmanaged"
   helm_deploy \
@@ -109,6 +114,13 @@ test_2_sail_lws_managed_unmanaged() {
   assert_cr_not_degraded "istio" "default" "Istio CR restored"
   wait_for_deployment "istiod" "istio-system"
   assert_cr_not_degraded "leaderworkersetoperator" "cluster" "LeaderWorkerSetOperator CR restored"
+
+  log "Restoring KServe and the inference gateway"
+  HELM_EXTRA_ARGS="$saved_helm_extra_args"
+  helm_deploy || return 1
+  wait_ke_ready || return 1
+  wait_for_cr_ready "kserves.components.platform.opendatahub.io" "default-kserve" "KServe restored" || return 1
+  wait_for_deployment "inference-gateway-istio" "redhat-ods-applications"
 }
 
 # ─── Test 3: External cert-manager (subchart disabled) ─────────────────────

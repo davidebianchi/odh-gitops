@@ -3376,7 +3376,7 @@ spec:
               value: "true"
             - name: RHAI_DISABLE_DASHBOARD_MODULE
               value: "true"
-            - name: RHAI_DISABLE_FEASTOPERATOR_MODULE
+            - name: RHAI_DISABLE_DATA_MODULE
               value: "true"
             - name: RHAI_DISABLE_MCPLIFECYCLEOPERATOR_MODULE
               value: "true"
@@ -3403,7 +3403,7 @@ spec:
             - name: RHAI_DISABLE_CERTCONFIGMAPGENERATOR_SERVICE
               value: "true"
             - name: RHAI_DISABLE_GATEWAY_SERVICE
-              value: "false"
+              value: "true"
             - name: RHAI_DISABLE_SETUPCONTROLLER_SERVICE
               value: "true"
             - name: RHAI_APPLICATIONS_NAMESPACE
@@ -3963,7 +3963,17 @@ spec:
               echo "Waiting for CRD platforms.config.opendatahub.io to be established..."
               kubectl wait --for condition=established --timeout=300s crd/platforms.config.opendatahub.io
               echo "Creating Platform CR..."
-              kubectl apply -f - <<'EOF'
+              apply_deadline=$((SECONDS + 300))
+              last_error=""
+              while true; do
+                remaining=$((apply_deadline - SECONDS))
+                if (( remaining <= 0 )); then
+                  echo "Timed out applying Platform CR. Last error: $last_error" >&2
+                  exit 1
+                fi
+                attempt_timeout=$((remaining < 15 ? remaining : 15))
+                # kubectl --request-timeout bypasses in-cluster configuration; bound the process instead.
+                if apply_output=$(timeout --kill-after=5s "${attempt_timeout}s" kubectl apply -f - 2>&1 <<'EOF'
               apiVersion: config.opendatahub.io/v1alpha2
               kind: Platform
               metadata:
@@ -3973,9 +3983,30 @@ spec:
                   app.kubernetes.io/managed-by: Helm
               spec:
                 modules:
+                  aigateway:
+                    managementState: Removed
                   kserve:
                     managementState: Managed
               EOF
+                ); then
+                  echo "$apply_output"
+                  break
+                else
+                  apply_output="${apply_output:-kubectl apply failed with exit code $?}"
+                fi
+                case "$apply_output" in
+                  *'Error from server (Forbidden)'*|*'Error from server (Invalid)'*|*' is forbidden:'*|*' is invalid:'*|*'The request is invalid'*|\
+                  *'ValidationError('*)
+                    echo "Platform apply failed permanently: $apply_output" >&2
+                    exit 1
+                    ;;
+                esac
+                if [[ -z "$last_error" ]]; then
+                  echo "Platform apply failed; retrying every 5 seconds: $apply_output" >&2
+                fi
+                last_error="$apply_output"
+                sleep 5
+              done
               echo "Waiting for CRD kserves.components.platform.opendatahub.io to exist..."
               elapsed=0; while [ $elapsed -lt 300 ]; do
                 kubectl get crd/kserves.components.platform.opendatahub.io &>/dev/null && break
