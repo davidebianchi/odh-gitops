@@ -203,6 +203,7 @@ Emit kubectl apply commands for provider KE CR, Platform CR, then component CRs.
 Provider KE CR is applied first to trigger dependency deployment (cert-manager, istio, etc.).
 Platform CR is applied next to trigger module operators (e.g. ai-gateway-operator).
 Component CRs are applied last, after their CRDs are registered by the operators.
+Disabled component CRs are deleted by the pre-upgrade hook before Helm removes their credentials.
 Include with: {{- include "rhai-on-xks-chart.crApplyCommands" . | nindent 14 }}
 */}}
 {{- define "rhai-on-xks-chart.crApplyCommands" -}}
@@ -254,6 +255,30 @@ spec:
 spec: {}
 {{- end }}
 EOF
+  {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/* Delete disabled component CRs while their controllers still have credentials. */}}
+{{- define "rhai-on-xks-chart.disabledComponentDeleteCommands" -}}
+{{- $root := . }}
+{{- $registry := include "rhai-on-xks-chart.componentCRRegistry" . | fromYaml }}
+{{- range $name := keys $registry | sortAlpha }}
+  {{- $meta := index $registry $name }}
+  {{- $compVals := index $.Values.components $name | default dict }}
+  {{- if not $compVals.enabled }}
+crd_name=$(kubectl get crd/{{ index $meta "resource" }}.{{ index $meta "apiGroup" }} --ignore-not-found -o name)
+if [[ -n "$crd_name" ]]; then
+  cr_labels=$(kubectl get {{ index $meta "resource" }}/{{ index $meta "crName" }} --ignore-not-found \
+    -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}{"|"}{.metadata.labels.helm\.sh/chart}')
+  # Match the chart name across versions so upgrades can clean up older CRs.
+  if [[ "$cr_labels" == {{ printf "%s|%s-" $root.Release.Service $root.Chart.Name | quote }}* ]]; then
+    echo "Deleting disabled {{ index $meta "kind" }} CR..."
+    kubectl delete {{ index $meta "resource" }}/{{ index $meta "crName" }} --ignore-not-found --timeout=300s
+  elif [[ -n "$cr_labels" ]]; then
+    echo "Skipping disabled {{ index $meta "kind" }} CR: not managed by this chart."
+  fi
+fi
   {{- end }}
 {{- end }}
 {{- end -}}
